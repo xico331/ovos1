@@ -13,14 +13,10 @@ from datetime import datetime
 # --- CONFIG ---
 st.set_page_config(page_title="Gestão de Ovos", page_icon="🥚")
 
-# --- DEBUG (REMOVE DEPOIS) ---
-# st.write(st.secrets)
-
 # --- PASSWORD ---
 def check_password():
-    # Se não existir password nos secrets → bloqueia tudo
     if "password" not in st.secrets:
-        st.error("⚠️ Password não configurada nos secrets!")
+        st.error("⚠️ Password não configurada!")
         st.stop()
 
     def password_entered():
@@ -35,7 +31,7 @@ def check_password():
 
     st.title("🔐 Acesso Restrito")
     st.text_input(
-        "Introduz a palavra-passe",
+        "Palavra-passe",
         type="password",
         on_change=password_entered,
         key="password"
@@ -55,19 +51,19 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 
 st.title("🥚 Gestão Avícola")
 
-# --- FORM ---
+# --- FORMULÁRIO (CORRIGIDO) ---
 st.sidebar.header("Novo Registo")
 
-with st.sidebar.form("form"):
+with st.sidebar.form("formulario"):
     data_venda = st.date_input("Data", datetime.now())
     qtd = st.number_input("Dúzias", min_value=1, step=1)
     preco = st.number_input("Preço (€)", min_value=0.0, format="%.2f")
     alim = st.number_input("Alimentação (€)", min_value=0.0, format="%.2f")
     novas = st.number_input("Galinhas (€)", min_value=0.0, format="%.2f")
 
-    submit = st.form_submit_button("Guardar")
+    submit = st.form_submit_button("Guardar")  # ✅ AGORA ESTÁ NO SÍTIO CERTO
 
-# --- SAVE ---
+# --- GUARDAR ---
 if submit:
     faturacao = qtd * preco
     lucro = faturacao - (alim + novas)
@@ -92,13 +88,13 @@ if submit:
 
         conn.update(data=df_final)
 
-        st.sidebar.success("✅ Guardado!")
+        st.sidebar.success("✅ Guardado com sucesso!")
         st.rerun()
 
     except Exception as e:
-        st.sidebar.error(f"Erro: {e}")
+        st.sidebar.error(f"Erro ao guardar: {e}")
 
-# --- VIEW ---
+# --- MOSTRAR DADOS ---
 try:
     df = conn.read()
 
