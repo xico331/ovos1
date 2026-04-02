@@ -12,7 +12,6 @@ from datetime import datetime
 # --- CONFIG ---
 st.set_page_config(page_title="Gestão de Ovos", page_icon="🥚")
 
-# ID do Google Sheets
 URL_DA_FOLHA = "19vUDc2wdnODiX1gTkKOQlxnHT_Y_RV-yXFTQDC59OU0"
 
 # --- PASSWORD ---
@@ -32,18 +31,12 @@ def check_password():
         return True
 
     st.title("🔐 Acesso Restrito")
-    st.text_input(
-        "Palavra-passe",
-        type="password",
-        on_change=password_entered,
-        key="password"
-    )
+    st.text_input("Palavra-passe", type="password", on_change=password_entered, key="password")
 
     if "password_correct" in st.session_state:
         st.error("❌ Palavra-passe incorreta")
 
     return False
-
 
 if not check_password():
     st.stop()
@@ -90,15 +83,14 @@ if submit:
 
         conn.update(spreadsheet=URL_DA_FOLHA, data=df_final)
 
-        st.sidebar.success("✅ Dados guardados!")
+        st.sidebar.success("✅ Guardado!")
         st.rerun()
 
     except Exception as e:
         st.sidebar.error(f"Erro: {e}")
 
-# --- MOSTRAR DADOS ---
+# --- LER DADOS ---
 try:
-    try:
     df = conn.read(spreadsheet=URL_DA_FOLHA, ttl=0)
 
     if df is None or not isinstance(df, pd.DataFrame):
@@ -107,35 +99,51 @@ try:
 except Exception:
     df = pd.DataFrame()
 
-# Se estiver vazio, cria estrutura
 if df.empty:
     df = pd.DataFrame(columns=[
         "Data", "Duzias", "Preco", "Alim", "Novas", "Faturacao", "Lucro"
     ])
 
-    if df is not None and not df.empty:
-        st.subheader("📊 Histórico")
+# --- MOSTRAR ---
+if not df.empty:
+    st.subheader("📊 Histórico")
 
-        st.dataframe(
-            df.style.format({
-                "Preco": "{:.2f}€",
-                "Alim": "{:.2f}€",
-                "Novas": "{:.2f}€",
-                "Faturacao": "{:.2f}€",
-                "Lucro": "{:.2f}€"
-            })
+    st.dataframe(
+        df.style.format({
+            "Preco": "{:.2f}€",
+            "Alim": "{:.2f}€",
+            "Novas": "{:.2f}€",
+            "Faturacao": "{:.2f}€",
+            "Lucro": "{:.2f}€"
+        })
+    )
+
+    st.divider()
+
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Dúzias", int(df["Duzias"].sum()))
+    c2.metric("Faturação", f"{df['Faturacao'].sum():.2f} €")
+    c3.metric("Lucro", f"{df['Lucro'].sum():.2f} €")
+
+    # --- LUCRO MENSAL ---
+    st.subheader("📈 Lucro Mensal")
+
+    df["Data"] = pd.to_datetime(df["Data"], format="%d/%m/%Y", errors="coerce")
+    df["Mes"] = df["Data"].dt.to_period("M").astype(str)
+
+    lucro_mensal = df.groupby("Mes")["Lucro"].sum()
+
+    st.line_chart(lucro_mensal)
+
+    # --- BOTÃO APAGAR ---
+    st.divider()
+    if st.button("🗑️ Apagar TODOS os dados"):
+        conn.update(
+            spreadsheet=URL_DA_FOLHA,
+            data=pd.DataFrame(columns=df.columns)
         )
+        st.success("Dados apagados!")
+        st.rerun()
 
-        st.divider()
-
-        c1, c2, c3 = st.columns(3)
-
-        c1.metric("Dúzias", int(df["Duzias"].sum()))
-        c2.metric("Faturação", f"{df['Faturacao'].sum():.2f} €")
-        c3.metric("Lucro", f"{df['Lucro'].sum():.2f} €")
-
-    else:
-        st.info("Sem dados ainda.")
-
-except Exception as e:
-    st.error(f"Erro ao carregar dados: {e}")
+else:
+    st.info("Sem dados ainda.")
