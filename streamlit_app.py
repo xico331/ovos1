@@ -65,7 +65,7 @@ with st.sidebar.form("formulario"):
 
 # --- GUARDAR ---
 if submit:
-    ffaturacao = qtd * preco
+    faturacao = qtd * preco
     lucro = faturacao - (gasto_alim + gasto_novas)
     nova_linha = {
         "Data": data_venda.strftime("%d/%m/%Y"),
