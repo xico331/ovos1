@@ -12,8 +12,6 @@ from datetime import datetime
 # --- CONFIG ---
 st.set_page_config(page_title="Gestão de Ovos", page_icon="🥚")
 
-URL_DA_FOLHA = "19vUDc2wdnODiX1gTkKOQlxnHT_Y_RV-yXFTQDC59OU0"
-
 # --- PASSWORD ---
 def check_password():
     if "password" not in st.secrets:
@@ -37,6 +35,7 @@ def check_password():
         st.error("❌ Palavra-passe incorreta")
 
     return False
+
 
 if not check_password():
     st.stop()
@@ -74,14 +73,14 @@ if submit:
     }])
 
     try:
-        df = conn.read(spreadsheet=URL_DA_FOLHA, ttl=0)
+        df = conn.read(ttl=0)
 
         if df is None or df.empty:
             df_final = nova_linha
         else:
             df_final = pd.concat([df, nova_linha], ignore_index=True)
 
-        conn.update(spreadsheet=URL_DA_FOLHA, data=df_final)
+        conn.update(data=df_final)  # ✅ CORRIGIDO
 
         st.sidebar.success("✅ Guardado!")
         st.rerun()
@@ -91,7 +90,7 @@ if submit:
 
 # --- LER DADOS ---
 try:
-    df = conn.read(spreadsheet=URL_DA_FOLHA, ttl=0)
+    df = conn.read(ttl=0)
 
     if df is None or not isinstance(df, pd.DataFrame):
         df = pd.DataFrame()
@@ -135,13 +134,10 @@ if not df.empty:
 
     st.line_chart(lucro_mensal)
 
-    # --- BOTÃO APAGAR ---
+    # --- APAGAR DADOS ---
     st.divider()
     if st.button("🗑️ Apagar TODOS os dados"):
-        conn.update(
-            spreadsheet=URL_DA_FOLHA,
-            data=pd.DataFrame(columns=df.columns)
-        )
+        conn.update(data=pd.DataFrame(columns=df.columns))  # ✅ CORRIGIDO
         st.success("Dados apagados!")
         st.rerun()
 
