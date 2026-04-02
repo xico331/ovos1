@@ -98,12 +98,16 @@ if submit:
 
 # --- MOSTRAR DADOS ---
 try:
+    try:
     df = conn.read(spreadsheet=URL_DA_FOLHA, ttl=0)
 
-# CORREÇÃO IMPORTANTE
-if not isinstance(df, pd.DataFrame):
+    if df is None or not isinstance(df, pd.DataFrame):
+        df = pd.DataFrame()
+
+except Exception:
     df = pd.DataFrame()
 
+# Se estiver vazio, cria estrutura
 if df.empty:
     df = pd.DataFrame(columns=[
         "Data", "Duzias", "Preco", "Alim", "Novas", "Faturacao", "Lucro"
