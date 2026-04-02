@@ -4,7 +4,6 @@ Created on Wed Apr  1 21:44:26 2026
 
 @author: Francisco
 """
-
 import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 import pandas as pd
@@ -12,6 +11,9 @@ from datetime import datetime
 
 # --- CONFIG ---
 st.set_page_config(page_title="Gestão de Ovos", page_icon="🥚")
+
+# ID do Google Sheets
+URL_DA_FOLHA = "19vUDc2wdnODiX1gTkKOQlxnHT_Y_RV-yXFTQDC59OU0"
 
 # --- PASSWORD ---
 def check_password():
@@ -51,7 +53,7 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 
 st.title("🥚 Gestão Avícola")
 
-# --- FORMULÁRIO (CORRIGIDO) ---
+# --- FORMULÁRIO ---
 st.sidebar.header("Novo Registo")
 
 with st.sidebar.form("formulario"):
@@ -61,43 +63,42 @@ with st.sidebar.form("formulario"):
     alim = st.number_input("Alimentação (€)", min_value=0.0, format="%.2f")
     novas = st.number_input("Galinhas (€)", min_value=0.0, format="%.2f")
 
-    submit = st.form_submit_button("Guardar")  # ✅ AGORA ESTÁ NO SÍTIO CERTO
+    submit = st.form_submit_button("Guardar")
 
 # --- GUARDAR ---
 if submit:
     faturacao = qtd * preco
-    lucro = faturacao - (gasto_alim + gasto_novas)
-    nova_linha = {
+    lucro = faturacao - (alim + novas)
+
+    nova_linha = pd.DataFrame([{
         "Data": data_venda.strftime("%d/%m/%Y"),
         "Duzias": int(qtd),
         "Preco": float(preco),
-        "Alim": float(gasto_alim),
-        "Novas": float(gasto_novas),
+        "Alim": float(alim),
+        "Novas": float(novas),
         "Faturacao": float(faturacao),
         "Lucro": float(lucro)
-    }
+    }])
+
     try:
-        # CORREÇÃO: ttl=0 obriga a app a ler os dados frescos do Google Sheets
-        df_atual = conn.read(spreadsheet=URL_DA_FOLHA, ttl=0)
         df = conn.read(spreadsheet=URL_DA_FOLHA, ttl=0)
-        if not df.empty:
-        # Junta a nova linha aos dados que já lá estão
-        df_final = pd.concat([df_atual, pd.DataFrame([nova_linha])], ignore_index=True)
-        
-        # Atualiza a folha de cálculo
+
+        if df is None or df.empty:
+            df_final = nova_linha
+        else:
+            df_final = pd.concat([df, nova_linha], ignore_index=True)
+
         conn.update(spreadsheet=URL_DA_FOLHA, data=df_final)
-        
-        # Limpa a memória da app para o histórico atualizar na hora
-        st.cache_data.clear() 
-        
+
         st.sidebar.success("✅ Dados guardados!")
         st.rerun()
+
     except Exception as e:
         st.sidebar.error(f"Erro: {e}")
 
 # --- MOSTRAR DADOS ---
 try:
-    df = conn.read()
+    df = conn.read(spreadsheet=URL_DA_FOLHA, ttl=0)
 
     if df is not None and not df.empty:
         st.subheader("📊 Histórico")
