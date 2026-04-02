@@ -65,34 +65,35 @@ with st.sidebar.form("formulario"):
 
 # --- GUARDAR ---
 if submit:
-    faturacao = qtd * preco
-    lucro = faturacao - (alim + novas)
-
-    nova_linha = pd.DataFrame([{
+    ffaturacao = qtd * preco
+    lucro = faturacao - (gasto_alim + gasto_novas)
+    nova_linha = {
         "Data": data_venda.strftime("%d/%m/%Y"),
-        "Duzias": qtd,
-        "Preco": preco,
-        "Alim": alim,
-        "Novas": novas,
-        "Faturacao": faturacao,
-        "Lucro": lucro
-    }])
-
+        "Duzias": int(qtd),
+        "Preco": float(preco),
+        "Alim": float(gasto_alim),
+        "Novas": float(gasto_novas),
+        "Faturacao": float(faturacao),
+        "Lucro": float(lucro)
+    }
     try:
-        df = conn.read()
-
-        if df is None or df.empty:
-            df_final = nova_linha
-        else:
-            df_final = pd.concat([df, nova_linha], ignore_index=True)
-
-        conn.update(data=df_final)
-
-        st.sidebar.success("✅ Guardado com sucesso!")
+        # CORREÇÃO: ttl=0 obriga a app a ler os dados frescos do Google Sheets
+        df_atual = conn.read(spreadsheet=URL_DA_FOLHA, ttl=0)
+        df = conn.read(spreadsheet=URL_DA_FOLHA, ttl=0)
+        if not df.empty:
+        # Junta a nova linha aos dados que já lá estão
+        df_final = pd.concat([df_atual, pd.DataFrame([nova_linha])], ignore_index=True)
+        
+        # Atualiza a folha de cálculo
+        conn.update(spreadsheet=URL_DA_FOLHA, data=df_final)
+        
+        # Limpa a memória da app para o histórico atualizar na hora
+        st.cache_data.clear() 
+        
+        st.sidebar.success("✅ Dados guardados!")
         st.rerun()
-
     except Exception as e:
-        st.sidebar.error(f"Erro ao guardar: {e}")
+        st.sidebar.error(f"Erro: {e}")
 
 # --- MOSTRAR DADOS ---
 try:
