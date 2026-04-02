@@ -100,6 +100,15 @@ if submit:
 try:
     df = conn.read(spreadsheet=URL_DA_FOLHA, ttl=0)
 
+# CORREÇÃO IMPORTANTE
+if not isinstance(df, pd.DataFrame):
+    df = pd.DataFrame()
+
+if df.empty:
+    df = pd.DataFrame(columns=[
+        "Data", "Duzias", "Preco", "Alim", "Novas", "Faturacao", "Lucro"
+    ])
+
     if df is not None and not df.empty:
         st.subheader("📊 Histórico")
 
