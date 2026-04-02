@@ -36,7 +36,6 @@ def check_password():
 
     return False
 
-
 if not check_password():
     st.stop()
 
@@ -80,7 +79,7 @@ if submit:
         else:
             df_final = pd.concat([df, nova_linha], ignore_index=True)
 
-        conn.update(data=df_final)  # ✅ CORRIGIDO
+        conn.update(data=df_final)
 
         st.sidebar.success("✅ Guardado!")
         st.rerun()
@@ -98,6 +97,7 @@ try:
 except Exception:
     df = pd.DataFrame()
 
+# estrutura se vazio
 if df.empty:
     df = pd.DataFrame(columns=[
         "Data", "Duzias", "Preco", "Alim", "Novas", "Faturacao", "Lucro"
@@ -119,10 +119,15 @@ if not df.empty:
 
     st.divider()
 
+    # métricas
+    total_duzias = df["Duzias"].sum()
+    total_faturacao = df["Faturacao"].sum()
+    total_lucro = df["Lucro"].sum()
+
     c1, c2, c3 = st.columns(3)
-    c1.metric("Dúzias", int(df["Duzias"].sum()))
-    c2.metric("Faturação", f"{df['Faturacao'].sum():.2f} €")
-    c3.metric("Lucro", f"{df['Lucro'].sum():.2f} €")
+    c1.metric("Dúzias", int(total_duzias))
+    c2.metric("Faturação", f"{total_faturacao:.2f} €")
+    c3.metric("Lucro Total", f"{total_lucro:.2f} €")
 
     # --- LUCRO MENSAL ---
     st.subheader("📈 Lucro Mensal")
@@ -134,10 +139,10 @@ if not df.empty:
 
     st.line_chart(lucro_mensal)
 
-    # --- APAGAR DADOS ---
+    # --- APAGAR ---
     st.divider()
     if st.button("🗑️ Apagar TODOS os dados"):
-        conn.update(data=pd.DataFrame(columns=df.columns))  # ✅ CORRIGIDO
+        conn.update(data=pd.DataFrame(columns=df.columns))
         st.success("Dados apagados!")
         st.rerun()
 
